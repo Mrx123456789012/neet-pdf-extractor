@@ -74,6 +74,7 @@ NEET_SITES = {
     "MAHARASHTRA UG": "https://medicalug2025.mahacet.org/NEET-UG-2025/login",
     "MAHARASHTRA PG": "https://medicalug2025.mahacet.org/NEET-PGM-2025/login",
     "HARYANA UG": "https://uhsrugcounselling.com/Notice"
+    "PONDICHERRY": "https://www.centacpuducherry.in/"
 
 }
 
@@ -1510,6 +1511,9 @@ with c2:
     if st.button("📂 JHARKHAND"):
         selected_site_name = "JHARKHAND"
         selected_site_url = NEET_SITES["JHARKHAND"]
+    if st.button("PONDICHERRY"):
+        selected_site_name = "PONDICHERRY"
+        selected_site_url = NEET_SITES["PONDICHERRY"]
 with c3:
     if st.button("📂 JHARKHAND 2"):
         selected_site_name = "JHARKHAND 2"
@@ -1913,4 +1917,5 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
