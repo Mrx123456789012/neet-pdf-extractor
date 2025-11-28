@@ -36,7 +36,6 @@ NEET_SITES = {
     "TELANGANA (KNRUHS)": "https://www.knruhs.telangana.gov.in/all-notifications/?cpage=1",
     "HIMACHAL PRADESH (AMRUHP)": "https://amruhp.ac.in/notices/",
     "JHARKHAND": "https://neetug.jceceb.org.in/Public/Home#parentHorizontalTab2",
-    "JHARKHAND 2": "https://jceceb.jharkhand.gov.in/Links/download.aspx",
     "SIKKIM NOTICES": "https://smu.edu.in/smu-notice-board.php",
 
     # Tripura
@@ -502,96 +501,7 @@ def scrape_pdfs_himachal_paginated(base_url, max_pages=41, pause=0.25):
 # -------------------------
 # JHARKHAND 2
 # -------------------------
-def scrape_pdfs_jharkhand2(base_url):
-    """
-    Targeted scraper for the JCECEB download page that matches
-    ContentPlaceHolder1_GvImportantnotices_Label1_<i> and
-    ContentPlaceHolder1_GvImportantnotices_HyperLink1_<i> pairs.
 
-    Returns: list of (absolute_url, clean_filename)
-    """
-    try:
-        r = requests.get(base_url, timeout=12)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "html.parser")
-        out = []
-
-        # find all anchor ids matching the exact pattern used on the page
-        anchors = soup.find_all("a", id=re.compile(r"ContentPlaceHolder1_GvImportantnotices_HyperLink1_\d+"), href=True)
-
-        parsed = urlparse(base_url)
-        domain_root = f"{parsed.scheme}://{parsed.netloc}"
-
-        for a in anchors:
-            aid = a.get("id", "")
-            # extract numeric suffix
-            m = re.search(r"(\d+)$", aid)
-            idx = m.group(1) if m else None
-
-            # matching label id
-            title_text = None
-            if idx:
-                label_id = f"ContentPlaceHolder1_GvImportantnotices_Label1_{idx}"
-                label_span = soup.find("span", id=label_id)
-                if label_span:
-                    title_text = label_span.get_text(" ", strip=True)
-
-            # fallback: try to get text from surrounding td or parent tr if label not found
-            if not title_text:
-                # try parent td or previous sibling td
-                td = a.find_parent("td")
-                if td:
-                    # look for previous sibling td which typically contains the title
-                    prev = td.find_previous_sibling("td")
-                    if prev:
-                        title_text = prev.get_text(" ", strip=True)
-                if not title_text:
-                    # as last resort, try the whole row's text minus anchor text
-                    tr = a.find_parent("tr")
-                    if tr:
-                        # remove anchor text
-                        full = tr.get_text(" ", strip=True)
-                        anchor_txt = a.get_text(" ", strip=True)
-                        title_text = full.replace(anchor_txt, "").strip()
-
-            # get href and resolve
-            href = a["href"].strip()
-            if not href:
-                continue
-
-            # 1) try urljoin first (works for ../download/1952.pdf)
-            full = urljoin(base_url, href)
-
-            # 2) if urljoin produced a relative-looking path or still contains ../, build from domain root
-            if ("..") in full or not urlparse(full).netloc:
-                # remove leading ../ or ./ sequences
-                cleaned = re.sub(r"^(\.\./)+", "", href)
-                cleaned = re.sub(r"^(\./)+", "", cleaned)
-                # ensure leading slash
-                if not cleaned.startswith("/"):
-                    cleaned = "/" + cleaned
-                full = domain_root + cleaned
-
-            # final sanity: if still no scheme/netloc, prefix domain_root
-            pf = urlparse(full)
-            if not pf.scheme or not pf.netloc:
-                full = domain_root + ("/" + full.lstrip("/"))
-
-            name = title_text or a.get_text(" ", strip=True) or os.path.basename(urlparse(full).path)
-            out.append((full, clean_filename(name)))
-
-        # dedupe while preserving order
-        seen = set()
-        dedup = []
-        for u, n in out:
-            if u not in seen:
-                seen.add(u)
-                dedup.append((u, n))
-        return dedup
-
-    except Exception as e:
-        # optional: log error somewhere, return empty list
-        return []
 
 # -------------------------
 # Bihar download-section
@@ -1595,9 +1505,6 @@ with c2:
         selected_site_url = NEET_SITES["PUNJAB MBBS & BDS"]
     
 with c3:
-    if st.button("📂 JHARKHAND 2"):
-        selected_site_name = "JHARKHAND 2"
-        selected_site_url = NEET_SITES["JHARKHAND 2"]
     if st.button("📝 SIKKIM NOTICES"):
         selected_site_name = "SIKKIM NOTICES"
         selected_site_url = NEET_SITES["SIKKIM NOTICES"]
@@ -1699,7 +1606,6 @@ if "selected_site_url" in locals() and selected_site_url:
     with st.spinner("Collecting pages..."):
         single_page_keys = {
             "TELANGANA (KNRUHS)",
-            "JHARKHAND 2",
             "WBMCC_MBBS_BDS_SCHEDULE",
             "WBMCC_MBBS_BDS_NOTICE",
             "WBMCC_DOWNLOAD_SECTION",
@@ -1832,8 +1738,6 @@ if "selected_site_url" in locals() and selected_site_url:
         elif selected_site_name == "HIMACHAL PRADESH (AMRUHP)":
 
             file_links = scrape_pdfs_himachal_paginated(selected_site_url, max_pages=41)
-        elif selected_site_name == "JHARKHAND 2":
-            file_links = scrape_pdfs_jharkhand2(selected_site_url)
         elif selected_site_name == "SIKKIM NOTICES":
             file_links = scrape_pdfs_from_pages([selected_site_url])
 
@@ -1997,6 +1901,7 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
 
