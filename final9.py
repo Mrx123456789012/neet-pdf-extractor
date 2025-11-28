@@ -503,19 +503,79 @@ def scrape_pdfs_himachal_paginated(base_url, max_pages=41, pause=0.25):
 # JHARKHAND 2
 # -------------------------
 def scrape_pdfs_jharkhand2(base_url):
+    """
+    Scrape PDF links from the JCECEB 'download.aspx' style page.
+    Uses the common table-row layout where:
+      <tr>
+        <td>row no</td>
+        <td><span>Title text (may contain <b> or styling)</span></td>
+        <td><a href="...">View</a></td>
+      </tr>
+    Falls back to id-based matching if row parsing fails.
+    Returns list of (absolute_url, clean_filename).
+    """
     try:
         r = requests.get(base_url, timeout=12)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
-        spans = soup.find_all("span", id=re.compile(r"Label1_\d+"))
-        links = soup.find_all("a", id=re.compile(r"HyperLink1_\d+"), href=True)
         out = []
-        for s, l in zip(spans, links):
-            name = s.get_text(" ", strip=True) or l.get_text(" ", strip=True)
-            out.append((urljoin(base_url, l["href"].strip()), clean_filename(name)))
-        return out
+
+        # PRIMARY: row-based parsing (robust for the HTML you posted)
+        for tr in soup.find_all("tr"):
+            tds = tr.find_all("td")
+            if len(tds) < 3:
+                continue
+
+            # 2nd td usually contains the title (may include nested spans / bold)
+            title_td = tds[1]
+            title_text = title_td.get_text(" ", strip=True)
+            if not title_text:
+                # skip rows with no descriptive title
+                continue
+
+            # 3rd td usually contains the anchor to the pdf
+            link_td = tds[2]
+            a = link_td.find("a", href=True)
+            if not a:
+                # sometimes the link is in the same td but nested differently
+                a = tr.find("a", href=True)
+            if not a:
+                continue
+
+            href = a["href"].strip()
+            if not href:
+                continue
+
+            full = urljoin(base_url, href)
+            name = title_text
+            out.append((full, clean_filename(name)))
+
+        # If nothing found, fall back to id-based matching (Label1_ / HyperLink1_ pattern)
+        if not out:
+            spans = soup.find_all("span", id=re.compile(r"(?:Label1|Label)\_\d+|GvImportantnotices_Label1_\d+|ContentPlaceHolder1_GvImportantnotices_Label1_\d+"))
+            links = soup.find_all("a", id=re.compile(r"(?:HyperLink1|HyperLink)\_\d+|GvImportantnotices_HyperLink1_\d+|ContentPlaceHolder1_GvImportantnotices_HyperLink1_\d+"), href=True)
+
+            # zip by index (page seems to list them in order)
+            for s, l in zip(spans, links):
+                name = s.get_text(" ", strip=True) or l.get_text(" ", strip=True)
+                href = l["href"].strip()
+                if not href:
+                    continue
+                full = urljoin(base_url, href)
+                out.append((full, clean_filename(name)))
+
+        # final dedupe preserving order
+        seen = set()
+        dedup = []
+        for u, n in out:
+            if u not in seen:
+                seen.add(u)
+                dedup.append((u, n))
+        return dedup
+
     except Exception:
         return []
+
 
 
 # -------------------------
@@ -1922,6 +1982,7 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
 
