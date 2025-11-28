@@ -504,15 +504,11 @@ def scrape_pdfs_himachal_paginated(base_url, max_pages=41, pause=0.25):
 # -------------------------
 def scrape_pdfs_jharkhand2(base_url):
     """
-    Scrape PDF links from the JCECEB 'download.aspx' style page.
-    Uses the common table-row layout where:
-      <tr>
-        <td>row no</td>
-        <td><span>Title text (may contain <b> or styling)</span></td>
-        <td><a href="...">View</a></td>
-      </tr>
-    Falls back to id-based matching if row parsing fails.
-    Returns list of (absolute_url, clean_filename).
+    Targeted scraper for the JCECEB download page that matches
+    ContentPlaceHolder1_GvImportantnotices_Label1_<i> and
+    ContentPlaceHolder1_GvImportantnotices_HyperLink1_<i> pairs.
+
+    Returns: list of (absolute_url, clean_filename)
     """
     try:
         r = requests.get(base_url, timeout=12)
@@ -520,51 +516,71 @@ def scrape_pdfs_jharkhand2(base_url):
         soup = BeautifulSoup(r.text, "html.parser")
         out = []
 
-        # PRIMARY: row-based parsing (robust for the HTML you posted)
-        for tr in soup.find_all("tr"):
-            tds = tr.find_all("td")
-            if len(tds) < 3:
-                continue
+        # find all anchor ids matching the exact pattern used on the page
+        anchors = soup.find_all("a", id=re.compile(r"ContentPlaceHolder1_GvImportantnotices_HyperLink1_\d+"), href=True)
 
-            # 2nd td usually contains the title (may include nested spans / bold)
-            title_td = tds[1]
-            title_text = title_td.get_text(" ", strip=True)
+        parsed = urlparse(base_url)
+        domain_root = f"{parsed.scheme}://{parsed.netloc}"
+
+        for a in anchors:
+            aid = a.get("id", "")
+            # extract numeric suffix
+            m = re.search(r"(\d+)$", aid)
+            idx = m.group(1) if m else None
+
+            # matching label id
+            title_text = None
+            if idx:
+                label_id = f"ContentPlaceHolder1_GvImportantnotices_Label1_{idx}"
+                label_span = soup.find("span", id=label_id)
+                if label_span:
+                    title_text = label_span.get_text(" ", strip=True)
+
+            # fallback: try to get text from surrounding td or parent tr if label not found
             if not title_text:
-                # skip rows with no descriptive title
-                continue
+                # try parent td or previous sibling td
+                td = a.find_parent("td")
+                if td:
+                    # look for previous sibling td which typically contains the title
+                    prev = td.find_previous_sibling("td")
+                    if prev:
+                        title_text = prev.get_text(" ", strip=True)
+                if not title_text:
+                    # as last resort, try the whole row's text minus anchor text
+                    tr = a.find_parent("tr")
+                    if tr:
+                        # remove anchor text
+                        full = tr.get_text(" ", strip=True)
+                        anchor_txt = a.get_text(" ", strip=True)
+                        title_text = full.replace(anchor_txt, "").strip()
 
-            # 3rd td usually contains the anchor to the pdf
-            link_td = tds[2]
-            a = link_td.find("a", href=True)
-            if not a:
-                # sometimes the link is in the same td but nested differently
-                a = tr.find("a", href=True)
-            if not a:
-                continue
-
+            # get href and resolve
             href = a["href"].strip()
             if not href:
                 continue
 
+            # 1) try urljoin first (works for ../download/1952.pdf)
             full = urljoin(base_url, href)
-            name = title_text
+
+            # 2) if urljoin produced a relative-looking path or still contains ../, build from domain root
+            if ("..") in full or not urlparse(full).netloc:
+                # remove leading ../ or ./ sequences
+                cleaned = re.sub(r"^(\.\./)+", "", href)
+                cleaned = re.sub(r"^(\./)+", "", cleaned)
+                # ensure leading slash
+                if not cleaned.startswith("/"):
+                    cleaned = "/" + cleaned
+                full = domain_root + cleaned
+
+            # final sanity: if still no scheme/netloc, prefix domain_root
+            pf = urlparse(full)
+            if not pf.scheme or not pf.netloc:
+                full = domain_root + ("/" + full.lstrip("/"))
+
+            name = title_text or a.get_text(" ", strip=True) or os.path.basename(urlparse(full).path)
             out.append((full, clean_filename(name)))
 
-        # If nothing found, fall back to id-based matching (Label1_ / HyperLink1_ pattern)
-        if not out:
-            spans = soup.find_all("span", id=re.compile(r"(?:Label1|Label)\_\d+|GvImportantnotices_Label1_\d+|ContentPlaceHolder1_GvImportantnotices_Label1_\d+"))
-            links = soup.find_all("a", id=re.compile(r"(?:HyperLink1|HyperLink)\_\d+|GvImportantnotices_HyperLink1_\d+|ContentPlaceHolder1_GvImportantnotices_HyperLink1_\d+"), href=True)
-
-            # zip by index (page seems to list them in order)
-            for s, l in zip(spans, links):
-                name = s.get_text(" ", strip=True) or l.get_text(" ", strip=True)
-                href = l["href"].strip()
-                if not href:
-                    continue
-                full = urljoin(base_url, href)
-                out.append((full, clean_filename(name)))
-
-        # final dedupe preserving order
+        # dedupe while preserving order
         seen = set()
         dedup = []
         for u, n in out:
@@ -573,10 +589,9 @@ def scrape_pdfs_jharkhand2(base_url):
                 dedup.append((u, n))
         return dedup
 
-    except Exception:
+    except Exception as e:
+        # optional: log error somewhere, return empty list
         return []
-
-
 
 # -------------------------
 # Bihar download-section
@@ -1982,6 +1997,7 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
 
