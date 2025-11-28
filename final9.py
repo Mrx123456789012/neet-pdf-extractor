@@ -73,6 +73,7 @@ NEET_SITES = {
         # Maharashtra
     "MAHARASHTRA UG": "https://medicalug2025.mahacet.org/NEET-UG-2025/login",
     "MAHARASHTRA PG": "https://medicalug2025.mahacet.org/NEET-PGM-2025/login",
+    "HARYANA UG": "https://uhsrugcounselling.com/Notice"
 
 }
 
@@ -1498,6 +1499,10 @@ with c1:
     if st.button("🏥 MAHARASHTRA PG"):
         selected_site_name = "MAHARASHTRA PG"
         selected_site_url = NEET_SITES["MAHARASHTRA PG"]
+    if st.button("🏥 HARYANA UG"):
+        selected_site_name = "HARYANA UG"
+        selected_site_url = NEET_SITES["HARYANA UG"]
+    
 with c2:
     if st.button("🏔 HIMACHAL PRADESH (AMRUHP)"):
         selected_site_name = "HIMACHAL PRADESH (AMRUHP)"
@@ -1908,3 +1913,4 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
