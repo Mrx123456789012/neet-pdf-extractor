@@ -1296,7 +1296,7 @@ st.set_page_config(page_title="⚡NEET PDF Extractor", layout="centered")
 
 def check_password():
     def password_entered():
-        if st.session_state["password_input"] == "extractor":
+        if st.session_state["password_input"] == "jarvis":
             st.session_state["password_correct"] = True
             del st.session_state["password_input"]
         else:
@@ -1917,6 +1917,7 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
 
