@@ -73,7 +73,7 @@ NEET_SITES = {
         # Maharashtra
     "MAHARASHTRA UG": "https://medicalug2025.mahacet.org/NEET-UG-2025/login",
     "MAHARASHTRA PG": "https://medicalug2025.mahacet.org/NEET-PGM-2025/login",
-    "HARYANA UG": "https://uhsrugcounselling.com/Notice"
+    "HARYANA UG": "https://uhsrugcounselling.com/Notice",
     "PONDICHERRY": "https://www.centacpuducherry.in/"
 
 }
@@ -1917,5 +1917,6 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
