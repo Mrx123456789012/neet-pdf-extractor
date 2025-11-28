@@ -74,7 +74,8 @@ NEET_SITES = {
     "MAHARASHTRA PG": "https://medicalug2025.mahacet.org/NEET-PGM-2025/login",
     "HARYANA UG": "https://uhsrugcounselling.com/Notice",
     "PONDICHERRY": "https://www.centacpuducherry.in/",
-    "PUNJAB MBBS & BDS": "https://bfuhs.ac.in/mbbs_bds/mbbsbds.asp"
+    "PUNJAB MBBS & BDS": "https://bfuhs.ac.in/mbbs_bds/mbbsbds.asp",
+    "TAMIL NADU AYUSH": "https://tnayushselection.org/#"
 
 }
 
@@ -1503,7 +1504,9 @@ with c2:
     if st.button("PUNJAB MBBS & BDS"):
         selected_site_name = "PUNJAB MBBS & BDS"
         selected_site_url = NEET_SITES["PUNJAB MBBS & BDS"]
-    
+    if st.button("TAMIL NADU AYUSH"):
+        selected_site_name = "TAMIL NADU AYUSH"
+        selected_site_url = NEET_SITES["TAMIL NADU AYUSH"]
 with c3:
     if st.button("📝 SIKKIM NOTICES"):
         selected_site_name = "SIKKIM NOTICES"
@@ -1901,6 +1904,7 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
 
