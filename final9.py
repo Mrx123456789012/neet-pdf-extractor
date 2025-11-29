@@ -49,6 +49,7 @@ NEET_SITES = {
     "ANDHRA PRADESH AYUSH CQ": "https://apuhs-ugadmissions.aptonline.in/UGAYUSH/Home/Home",
     "ANDHRA PRADESH AYUSH AIQ": "https://apuhs-ugadmissions.aptonline.in/UGAYUSHAIQ",
     "ANDHRA PRADESH AYUSH MQ": "https://apuhs-ugadmissions.aptonline.in/UGAYUSHMQ",
+    "ANDHRA PRADESH NOTIFICATION": "https://drntr.uhsap.in/index/index",
 
     # MCC
     "MCC SCHEDULES (UG)": "https://mcc.nic.in/eservices-schedule-ug/",
@@ -1443,6 +1444,9 @@ with ap_col2:
     if st.button("🌿 ANDHRA PRADESH AYUSH MQ"):
         selected_site_name = "ANDHRA PRADESH AYUSH MQ"
         selected_site_url = NEET_SITES["ANDHRA PRADESH AYUSH MQ"]
+    if st.button("🔔 ANDHRA PRADESH NOTIFICATION"):
+        selected_site_name = "ANDHRA PRADESH NOTIFICATION"
+        selected_site_url = NEET_SITES["ANDHRA PRADESH NOTIFICATION"]
 
 st.markdown("---")
 
@@ -1629,6 +1633,7 @@ if "selected_site_url" in locals() and selected_site_url:
             "WBMCC_PG_DENTAL_SCHEDULE",
             "WBMCC_PG_DENTAL_NOTICE",
             "WBMCC_PG_DENTAL_DOWNLOAD",
+            "ANDHRA PRADESH NOTIFICATION",
 
             "Manual",
         }
@@ -1904,6 +1909,7 @@ if st.session_state.get("pdf_links"):
 # FOOTER
 # -------------------------
 st.markdown("---")
+
 
 
 
